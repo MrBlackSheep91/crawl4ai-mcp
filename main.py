@@ -32,8 +32,9 @@ chroma_client = chromadb.HttpClient(
     host=CHROMA_URL.replace("http://", "").replace("https://", "").split(":")[0],
     port=int(CHROMA_URL.split(":")[-1]) if ":" in CHROMA_URL else 8000,
     settings=Settings(
-        chroma_client_auth_provider="chromadb.auth.token.TokenAuthClientProvider",
-        chroma_client_auth_credentials=CHROMA_API_KEY
+        chroma_client_auth_provider="chromadb.auth.token_authn.TokenAuthClientProvider",
+        chroma_client_auth_credentials=CHROMA_API_KEY,
+        chroma_auth_token_transport_header="X-Chroma-Token"
     ) if CHROMA_API_KEY else Settings()
 )
 
