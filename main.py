@@ -11,8 +11,6 @@ import chromadb
 from chromadb.config import Settings
 from sentence_transformers import SentenceTransformer
 from crawl4ai import AsyncWebCrawler
-from crawl4ai.extraction_strategy import LLMExtractionStrategy
-from crawl4ai.chunking_strategy import RegexChunking
 
 # Environment variables
 CHROMA_URL = os.getenv("CHROMA_URL", "http://chroma.railway.internal:8000")
@@ -116,11 +114,7 @@ async def crawl_and_index(request: CrawlRequest):
         # Initialize crawler
         async with AsyncWebCrawler(verbose=True) as crawler:
             # Crawl the page
-            result = await crawler.arun(
-                url=url_str,
-                chunking_strategy=RegexChunking(patterns=["\n\n", "\n", ". "]),
-                bypass_cache=True
-            )
+            result = await crawler.arun(url=url_str)
 
             if not result.success:
                 raise HTTPException(status_code=500, detail="Crawl failed")
