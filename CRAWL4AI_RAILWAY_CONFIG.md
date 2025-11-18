@@ -11,8 +11,9 @@
 ### Crawl4AI Service
 - **Service ID:** 155e1ce0-7dee-41df-83bc-4eac91397d66
 - **URL:** https://crawl4ai-production-7ab7.up.railway.app
-- **Port:** 8000
+- **Port:** Dynamic (Railway $PORT, typically 8080)
 - **Repository:** https://github.com/MrBlackSheep91/crawl4ai-mcp
+- **Status:** ✅ RUNNING (Deployment a08f3027)
 
 ### ChromaDB Service
 - **Service ID:** 2b898841-755c-40e7-81b9-db7202fdb843
@@ -51,25 +52,23 @@ CHROMA_WORKERS=1
 ## Stack Components
 
 ### Web Scraping
-- **Crawl4AI:** 0.3.74 (async web crawler with headless Chrome)
-- **Playwright:** 1.47.0 (browser automation)
-- **BeautifulSoup4:** 4.12.2 (HTML parsing)
-- **lxml:** 5.4.0 (XML/HTML processing)
+- **Crawl4AI:** 0.7.7 (Nov 2025 - async web crawler with headless Chrome)
+- **BeautifulSoup4:** 4.12.3 (HTML parsing)
+- **lxml:** 5.3.0+ (XML/HTML processing)
+- **aiohttp:** 3.11.12 (async HTTP client)
 
 ### Vector Storage
-- **ChromaDB:** 0.4.22 (embedding database)
-- **chroma-hnswlib:** 0.7.3 (HNSW indexing)
+- **ChromaDB:** 1.2.1 (Oct 2025 - embedding database)
+- **Auth:** token_authn.TokenAuthClientProvider with X-Chroma-Token header
 
 ### ML/Embeddings
-- **Sentence Transformers:** 2.2.2 (semantic embeddings)
+- **Sentence Transformers:** 5.1.2 (Oct 2025 - semantic embeddings)
 - **Model:** all-MiniLM-L6-v2 (free, local embeddings)
-- **PyTorch:** 2.9.1 (ML framework)
-- **Transformers:** 4.57.1 (Hugging Face models)
 
 ### API Framework
-- **FastAPI:** 0.104.1 (REST API)
-- **Uvicorn:** 0.24.0 (ASGI server)
-- **Pydantic:** 2.5.0 (data validation)
+- **FastAPI:** 0.121.2 (Nov 2025 - REST API)
+- **Uvicorn:** 0.34.0 (ASGI server)
+- **Pydantic:** 2.10.6 (data validation)
 
 ---
 
@@ -320,13 +319,13 @@ for url in urls_to_crawl:
 ## Next Steps
 
 1. ✅ Deploy Crawl4AI + ChromaDB to Railway
-2. ⏳ Test crawling and indexing
+2. ✅ Test crawling and indexing (health check + stats endpoint verified)
 3. ⏳ Integrate with Graphiti (FASE 4)
 4. ⏳ Create scheduled crawls for documentation updates
 5. ⏳ Add MCP protocol endpoints
 
 **Deployed:** 2025-11-18
-**Status:** 🔄 Building (in progress)
+**Status:** ✅ DEPLOYED (Deployment a08f3027)
 
 ---
 
