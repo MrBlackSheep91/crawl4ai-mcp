@@ -1,0 +1,9 @@
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.0
+crawl4ai==0.3.74
+chromadb==0.4.22
+sentence-transformers==2.2.2
+aiohttp==3.9.1
+beautifulsoup4==4.12.2
+lxml==4.9.3
