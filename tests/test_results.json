@@ -1,0 +1,35 @@
+{
+  "timestamp": "2025-11-18T20:13:08.393354",
+  "tests_passed": 5,
+  "tests_failed": 0,
+  "details": [
+    {
+      "test": "health_endpoints",
+      "status": "PASSED",
+      "message": "All services healthy"
+    },
+    {
+      "test": "crawl_and_index",
+      "status": "PASSED",
+      "chunks_added": 11,
+      "url": "https://docs.railway.app/guides/deployments"
+    },
+    {
+      "test": "semantic_search",
+      "status": "PASSED",
+      "results_count": 3,
+      "top_distance": 1.3354521
+    },
+    {
+      "test": "graphiti_integration",
+      "status": "PASSED",
+      "messages_sent": 3,
+      "group_id": "maicol_second_brain"
+    },
+    {
+      "test": "stats_verification",
+      "status": "PASSED",
+      "total_documents": 11
+    }
+  ]
+}
