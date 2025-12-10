@@ -253,6 +253,102 @@ async def get_stats():
         raise HTTPException(status_code=500, detail=str(e))
 
 
+class IndexRequest(BaseModel):
+    content: str
+    title: str = ""
+    source: str = "manual"
+    chunk_size: int = 1000
+
+
+class IndexResponse(BaseModel):
+    success: bool
+    chunks_added: int
+    message: str
+
+
+@app.post("/index", response_model=IndexResponse)
+async def index_text(request: IndexRequest):
+    """
+    Index text content directly without crawling.
+    Useful for indexing local files, transcriptions, etc.
+
+    Example:
+    ```
+    POST /index
+    {
+        "content": "Your text content here...",
+        "title": "Document Title",
+        "source": "veterinario_transcription",
+        "chunk_size": 1000
+    }
+    ```
+    """
+    try:
+        collection = get_or_create_collection()
+
+        text_content = request.content.strip()
+        if not text_content:
+            return IndexResponse(
+                success=False,
+                chunks_added=0,
+                message="No content provided"
+            )
+
+        # Split into chunks
+        chunks = []
+        chunk_size = request.chunk_size
+
+        for i in range(0, len(text_content), chunk_size):
+            chunk = text_content[i:i + chunk_size]
+            if chunk.strip():
+                chunks.append(chunk)
+
+        if not chunks:
+            return IndexResponse(
+                success=False,
+                chunks_added=0,
+                message="No chunks created from content"
+            )
+
+        # Generate embeddings
+        embeddings = embedding_model.encode(chunks).tolist()
+
+        # Prepare for ChromaDB - ensure title is a simple string
+        safe_title = str(request.title)[:500] if request.title else ""
+        safe_source = str(request.source)[:500] if request.source else "manual"
+
+        import hashlib
+        content_hash = hashlib.md5(text_content[:100].encode()).hexdigest()[:8]
+        ids = [f"{safe_source}_{content_hash}_chunk_{i}" for i in range(len(chunks))]
+
+        metadatas = [
+            {
+                "source": safe_source,
+                "chunk_index": i,
+                "total_chunks": len(chunks),
+                "title": safe_title,
+            }
+            for i in range(len(chunks))
+        ]
+
+        # Add to ChromaDB
+        collection.add(
+            ids=ids,
+            embeddings=embeddings,
+            documents=chunks,
+            metadatas=metadatas
+        )
+
+        return IndexResponse(
+            success=True,
+            chunks_added=len(chunks),
+            message=f"Successfully indexed {len(chunks)} chunks from {safe_source}"
+        )
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.delete("/collection")
 async def delete_collection():
     """Delete entire collection (use with caution!)"""
