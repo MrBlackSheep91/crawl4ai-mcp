@@ -153,12 +153,23 @@ async def crawl_and_index(request: CrawlRequest):
 
             # Prepare for ChromaDB
             ids = [f"{url_str}_chunk_{i}" for i in range(len(chunks))]
+
+            # Safely extract title - ChromaDB requires primitive types only
+            title = ""
+            if result.metadata and isinstance(result.metadata, dict):
+                raw_title = result.metadata.get("title", "")
+                # Ensure title is a simple string (not list, dict, or None)
+                if isinstance(raw_title, str):
+                    title = raw_title[:500]  # Limit length
+                elif raw_title is not None:
+                    title = str(raw_title)[:500]
+
             metadatas = [
                 {
                     "source_url": url_str,
                     "chunk_index": i,
                     "total_chunks": len(chunks),
-                    "title": result.metadata.get("title", ""),
+                    "title": title,
                 }
                 for i in range(len(chunks))
             ]
