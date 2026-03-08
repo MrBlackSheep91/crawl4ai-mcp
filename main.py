@@ -253,6 +253,35 @@ async def get_stats():
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.get("/export")
+async def export_all(offset: int = 0, limit: int = 1000):
+    """Export chunks from ChromaDB with pagination."""
+    try:
+        collection = get_or_create_collection()
+        total = collection.count()
+        result = collection.get(
+            limit=limit,
+            offset=offset,
+            include=["documents", "metadatas"]
+        )
+        chunks = []
+        for i in range(len(result["ids"])):
+            chunks.append({
+                "id": result["ids"][i],
+                "document": result["documents"][i],
+                "metadata": result["metadatas"][i]
+            })
+        return {
+            "total": total,
+            "offset": offset,
+            "limit": limit,
+            "count": len(chunks),
+            "chunks": chunks
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 class IndexRequest(BaseModel):
     content: str
     title: str = ""
