@@ -3,19 +3,23 @@ Crawl4AI + ChromaDB MCP Server
 Scrapes documentation and stores in vector database
 """
 import os
+import time
 import asyncio
 from typing import List, Optional
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, HttpUrl
 import chromadb
 from chromadb.config import Settings
-from sentence_transformers import SentenceTransformer
+from openai import OpenAI
 from crawl4ai import AsyncWebCrawler
 
 # Environment variables
 CHROMA_URL = os.getenv("CHROMA_URL", "http://chroma.railway.internal:8000")
 CHROMA_API_KEY = os.getenv("CHROMA_API_KEY", "")
 COLLECTION_NAME = os.getenv("COLLECTION_NAME", "maicol_docs")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
+EMBED_MODEL = os.getenv("EMBED_MODEL", "openai/text-embedding-3-small")
+EMBED_BASE_URL = os.getenv("EMBED_BASE_URL", "https://openrouter.ai/api/v1")
 
 # Initialize FastAPI
 app = FastAPI(
@@ -24,8 +28,42 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Initialize sentence transformer for embeddings (free, local)
-embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
+# Embeddings client (OpenRouter, OpenAI-compatible)
+_embed_client = OpenAI(api_key=OPENROUTER_API_KEY, base_url=EMBED_BASE_URL)
+
+EMBED_BATCH_SIZE = 512
+EMBED_MAX_RETRIES = 3
+
+
+def embed_texts(texts: list[str]) -> list[list[float]]:
+    """Generate embeddings for a list of texts via OpenRouter, batched and with retries."""
+    if not OPENROUTER_API_KEY:
+        raise RuntimeError("OPENROUTER_API_KEY is not set")
+
+    all_embeddings: list[list[float]] = []
+
+    for i in range(0, len(texts), EMBED_BATCH_SIZE):
+        batch = texts[i:i + EMBED_BATCH_SIZE]
+
+        last_error = None
+        for attempt in range(EMBED_MAX_RETRIES):
+            try:
+                response = _embed_client.embeddings.create(
+                    model=EMBED_MODEL,
+                    input=batch
+                )
+                all_embeddings.extend([item.embedding for item in response.data])
+                last_error = None
+                break
+            except Exception as e:
+                last_error = e
+                if attempt < EMBED_MAX_RETRIES - 1:
+                    time.sleep(2 ** attempt)
+
+        if last_error is not None:
+            raise RuntimeError(f"Embedding request failed after {EMBED_MAX_RETRIES} attempts: {last_error}")
+
+    return all_embeddings
 
 # Initialize ChromaDB client
 chroma_client = chromadb.HttpClient(
@@ -149,7 +187,7 @@ async def crawl_and_index(request: CrawlRequest):
                 )
 
             # Generate embeddings
-            embeddings = embedding_model.encode(chunks).tolist()
+            embeddings = embed_texts(chunks)
 
             # Prepare for ChromaDB
             ids = [f"{url_str}_chunk_{i}" for i in range(len(chunks))]
@@ -211,7 +249,7 @@ async def search_documents(request: SearchRequest):
         collection = get_or_create_collection()
 
         # Generate query embedding
-        query_embedding = embedding_model.encode([request.query]).tolist()[0]
+        query_embedding = embed_texts([request.query])[0]
 
         # Search ChromaDB
         results = collection.query(
@@ -340,7 +378,7 @@ async def index_text(request: IndexRequest):
             )
 
         # Generate embeddings
-        embeddings = embedding_model.encode(chunks).tolist()
+        embeddings = embed_texts(chunks)
 
         # Prepare for ChromaDB - ensure title is a simple string
         safe_title = str(request.title)[:500] if request.title else ""
